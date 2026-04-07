@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Lote Prestamista Coletivo PF e PJ</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: Arial, sans-serif; background: #f0f2f5; padding: 40px 20px; }
+        .container { max-width: 560px; margin: 0 auto; }
+
+        /* Cabeçalho */
+        .page-header { margin-bottom: 22px; }
+        .back-link {
+            display: inline-flex; align-items: center; gap: 5px;
+            font-size: 0.8rem; font-weight: 600; color: #2d7dd2;
+            text-decoration: none; margin-bottom: 16px;
+            padding: 5px 12px 5px 8px;
+            border: 1.5px solid #c5daf7; border-radius: 20px;
+            background: #f0f7ff;
+            transition: background 0.15s, border-color 0.15s, color 0.15s;
+        }
+        .back-link:hover {
+            background: #2d7dd2; color: #fff;
+            border-color: #2d7dd2;
+        }
+        .back-link:hover svg { fill: #fff; }
+        h1 { font-size: 1.35rem; color: #1a1a2e; margin-bottom: 3px; }
+        .subtitle { font-size: 0.84rem; color: #888; }
+
+        /* Alertas */
+        .alert { padding: 11px 15px; border-radius: 7px; margin-bottom: 16px; font-size: 0.87rem; }
+        .alert-error { background: #fdecea; color: #c0392b; border: 1px solid #f5c6cb; }
+        .alert-success { background: #e6f4ea; color: #2e7d32; border: 1px solid #a5d6a7; display: flex; align-items: center; gap: 8px; }
+
+        /* Cards */
+        .card { background: #fff; border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 12px; border: 1px solid #eaecf0; }
+        .card-body { padding: 18px 22px; }
+        .card-label { font-size: 0.7rem; font-weight: bold; color: #2d7dd2; text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 12px; }
+
+        /* Seções PF/PJ */
+        .section-header { display: flex; align-items: center; gap: 10px; padding: 13px 22px; border-bottom: 1px solid #eef0f3; }
+        .section-badge { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 7px; font-size: 0.72rem; font-weight: bold; flex-shrink: 0; }
+        .badge-pf { background: #ddeeff; color: #1a5fa8; }
+        .badge-pj { background: #e6f4ea; color: #2e7d32; }
+        .section-header-title { font-size: 0.88rem; font-weight: bold; color: #222; }
+        .section-body { padding: 18px 22px; }
+
+        /* Form */
+        .form-group { margin-bottom: 16px; }
+        .form-group:last-child { margin-bottom: 0; }
+        label { display: block; font-size: 0.85rem; font-weight: bold; color: #333; margin-bottom: 6px; }
+        .hint { font-size: 0.76rem; color: #999; margin-top: 5px; line-height: 1.45; }
+        input[type="number"], input[type="text"], input[type="date"] {
+            width: 100%; padding: 9px 12px; border: 1px solid #dde1e7;
+            border-radius: 6px; font-size: 0.92rem; color: #222;
+            background: #fafbfc; transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        input[type="number"]:focus, input[type="text"]:focus, input[type="date"]:focus {
+            outline: none; border-color: #4a90d9; background: #fff;
+            box-shadow: 0 0 0 3px rgba(74,144,217,0.12);
+        }
+        input.input-error { border-color: #c0392b; }
+        .field-error { font-size: 0.76rem; color: #c0392b; margin-top: 4px; display: none; }
+
+        /* Contador em tempo real */
+        .counter-box {
+            display: none; background: #f8f9fb; border: 1px solid #eaecf0;
+            border-radius: 7px; padding: 9px 14px; font-size: 0.82rem;
+            color: #555; margin-bottom: 12px; text-align: center;
+        }
+        .counter-box.warn { background: #fff8e6; border-color: #fde68a; color: #92640a; }
+        .counter-box.over-limit { background: #fdecea; border-color: #f5c6cb; color: #c0392b; }
+
+        /* Info box */
+        .info-box { background: #eaf3fd; border-left: 3px solid #2d7dd2; border-radius: 0 7px 7px 0; padding: 10px 14px; font-size: 0.81rem; color: #2a5f8f; margin-bottom: 12px; }
+
+        /* Expansível */
+        .expandable { margin-top: 14px; }
+        .expand-toggle { display: inline-flex; align-items: center; gap: 6px; background: none; border: none; padding: 3px 0; cursor: pointer; color: #2d7dd2; font-size: 0.8rem; font-weight: bold; }
+        .expand-toggle svg { transition: transform 0.2s ease; flex-shrink: 0; }
+        .expand-toggle.open svg { transform: rotate(90deg); }
+        .expand-content { display: none; margin-top: 12px; background: #f8f9fb; border: 1px solid #eaecf0; border-radius: 8px; padding: 14px 16px; }
+        .expand-content.open { display: block; }
+
+        /* Checkbox */
+        .checkbox-group { display: flex; align-items: center; gap: 8px; }
+        .checkbox-group input[type="checkbox"] { width: 15px; height: 15px; cursor: pointer; accent-color: #2d7dd2; flex-shrink: 0; }
+        .checkbox-group label { font-size: 0.86rem; font-weight: bold; color: #333; margin-bottom: 0; cursor: pointer; }
+
+        /* Subcampo após checkbox */
+        .sub-field { display: none; margin-top: 10px; padding-left: 22px; border-left: 2px solid #c5daf7; }
+        .sub-field.visible { display: block; }
+
+        /* Separador interno */
+        .config-divider { border: none; border-top: 1px solid #e2e5ea; margin: 12px 0; }
+
+        /* Campos lado a lado */
+        .field-row { display: flex; gap: 12px; }
+        .field-row .form-group { flex: 1; margin-bottom: 0; }
+
+        /* Tooltip */
+        .tooltip-wrap { position: relative; display: inline-flex; align-items: center; vertical-align: middle; margin-left: 5px; }
+        .tooltip-icon { display: inline-flex; align-items: center; justify-content: center; width: 15px; height: 15px; border-radius: 50%; background: #d0e4f7; color: #1a5fa8; font-size: 0.62rem; font-weight: bold; cursor: default; user-select: none; }
+        .tooltip-icon:hover ~ .tooltip-box { display: block; }
+        .tooltip-box { display: none; position: absolute; left: 22px; top: 50%; transform: translateY(-50%); z-index: 200; background: #1a1a2e; color: #fff; font-size: 0.74rem; line-height: 1.5; padding: 8px 12px; border-radius: 7px; width: 230px; pointer-events: none; font-weight: normal; }
+        .tooltip-box::before { content: ''; position: absolute; left: -5px; top: 50%; transform: translateY(-50%); border: 5px solid transparent; border-right-color: #1a1a2e; border-left: none; }
+
+        /* Toggle de Layout */
+        .layout-switch-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 14px;
+            padding: 10px 14px;
+            background: #f8f9fb;
+            border: 1px solid #eaecf0;
+            border-radius: 8px;
+        }
+        .layout-opt {
+            font-size: 0.84rem;
+            font-weight: bold;
+            color: #bbb;
+            transition: color 0.15s;
+            cursor: pointer;
+            user-select: none;
+        }
+        .layout-opt.active { color: #1a1a2e; }
+        .toggle-sw {
+            position: relative;
+            display: inline-block;
+            width: 42px;
+            height: 23px;
+            flex-shrink: 0;
+        }
+        .toggle-sw input { opacity: 0; width: 0; height: 0; position: absolute; }
+        .toggle-sw .sw-slider {
+            position: absolute; cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: #2d7dd2;
+            border-radius: 23px;
+            transition: background 0.2s;
+        }
+        .toggle-sw .sw-slider::before {
+            content: '';
+            position: absolute;
+            width: 17px; height: 17px;
+            left: 3px; bottom: 3px;
+            background: #fff;
+            border-radius: 50%;
+            transition: transform 0.2s;
+        }
+        .toggle-sw input:checked + .sw-slider { background: #6b21a8; }
+        .toggle-sw input:checked + .sw-slider::before { transform: translateX(19px); }
+
+        /* Spinner */
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spinner { display: inline-block; width: 15px; height: 15px; border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 7px; }
+
+        /* Botões */
+        .submit-area { margin-top: 20px; }
+        .btn-row { display: flex; gap: 10px; }
+        .btn-row button[type="submit"] { flex: 1; }
+        button[type="submit"] {
+            padding: 13px; background: #2d7dd2; color: #fff;
+            border: none; border-radius: 8px; font-size: 1rem; font-weight: bold;
+            cursor: pointer; transition: background 0.15s; width: 100%;
+        }
+        button[type="submit"]:hover { background: #1c6bbf; }
+        button[type="submit"]:disabled { background: #aaa; cursor: not-allowed; }
+        .btn-secondary {
+            padding: 13px 20px; background: #fff; color: #555;
+            border: 1px solid #dde1e7; border-radius: 8px; font-size: 0.92rem;
+            font-weight: bold; cursor: pointer; white-space: nowrap;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .btn-secondary:hover { background: #f5f6f8; border-color: #b0b8c4; }
+        .loading { display: none; text-align: center; color: #777; font-size: 0.88rem; margin-top: 10px; }
+
+        /* Link de documentação */
+        .doc-link { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; background: #d0e4f7; color: #1a5fa8; font-size: 0.82rem; font-weight: bold; text-decoration: none; flex-shrink: 0; transition: background 0.2s, color 0.2s, box-shadow 0.2s; vertical-align: middle; }
+        .doc-link:hover { background: #2d7dd2; color: #fff; box-shadow: 0 2px 8px rgba(45,125,210,0.35); }
+        .doc-tooltip { display: none; position: absolute; top: calc(100% + 10px); left: 50%; transform: translateX(-50%); z-index: 300; background: #2d7dd2; color: #fff; font-size: 0.78rem; font-weight: 600; line-height: 1.4; padding: 7px 13px; border-radius: 8px; white-space: nowrap; pointer-events: none; box-shadow: 0 4px 14px rgba(45,125,210,0.3); letter-spacing: 0.01em; }
+        .doc-tooltip::before { content: ''; position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); border: 6px solid transparent; border-bottom-color: #2d7dd2; }
+        .doc-link:hover ~ .doc-tooltip { display: block; }
+        .title-row { display: flex; align-items: center; margin-bottom: 3px; }
+        .title-row h1 { margin-bottom: 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="page-header">
+            <a href="/" class="back-link">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="#2d7dd2" xmlns="http://www.w3.org/2000/svg" style="transition: fill 0.15s;"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+                Voltar
+            </a>
+            <div class="title-row">
+                <h1>Gerador de Lote Prestamista Coletivo PF e PJ</h1>
+                <span class="tooltip-wrap" style="margin-left: 8px;">
+                    <a href="https://confluence.external-share.com/content/834066/base_de_conhecimento_pmt/1628176408" target="_blank" rel="noopener noreferrer" class="doc-link">?</a>
+                    <span class="doc-tooltip">Documentação da importação</span>
+                </span>
+            </div>
+            <p class="subtitle">Gera planilha Excel (.xlsx) com CPF e CNPJ válidos</p>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endwith %}
+
+        <div id="js-alert" style="display:none;" class="alert"></div>
+
+        <!-- Arquivo -->
+        <div class="card">
+            <div class="card-body">
+                <p class="card-label">Arquivo de saída</p>
+                <div class="form-group">
+                    <label for="prefixo_arquivo">Nome do arquivo</label>
+                    <input type="text" id="prefixo_arquivo" placeholder="lote_importacao" maxlength="60">
+                    <p class="hint">Prefixo do arquivo gerado. Se em branco, será usado <strong>lote_importacao</strong>. Nome final: <em>prefixo_AAAAMMDD_HHMMSS.xlsx</em></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-box">
+            Preencha as quantidades abaixo. O arquivo será gerado e baixado automaticamente. Limite: 1000 registros por geração.
+        </div>
+
+        <form id="gerador-form">
+            <input type="hidden" id="prefixo_hidden" name="prefixo_arquivo_form">
+
+            <!-- Seção PF -->
+            <div class="card">
+                <div class="section-header">
+                    <span class="section-badge badge-pf">PF</span>
+                    <span class="section-header-title">Pessoa Física</span>
+                </div>
+                <div class="section-body">
+                    <div class="form-group">
+                        <label for="num_pf">Quantidade de PF</label>
+                        <input type="number" id="num_pf" name="num_pf" min="0" max="1000" oninput="atualizarContador()">
+                        <p class="hint">Quantidade de segurados Pessoa Física que serão gerados no lote.</p>
+                    </div>
+
+                    <div class="expandable">
+                        <button type="button" class="expand-toggle" id="expand-btn-pf" onclick="toggleExpandablePf()">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="#2d7dd2" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg>
+                            Mais configurações
+                        </button>
+                        <div class="expand-content" id="expand-pf">
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="usar_nome_social_pf" name="usar_nome_social_pf" onchange="toggleNomeSocialPf()">
+                                <label for="usar_nome_social_pf">Nome Social</label>
+                                <span class="tooltip-wrap">
+                                    <span class="tooltip-icon">i</span>
+                                    <span class="tooltip-box">Gera nome social para os segurados PF. Informe a quantidade ou deixe em branco para geração aleatória (50% de chance por segurado).</span>
+                                </span>
+                            </div>
+                            <div class="sub-field" id="sub-nome-social-pf">
+                                <input type="number" id="num_nome_social_pf" name="num_nome_social_pf" min="1" placeholder="Deixe em branco para aleatório" oninput="validarNomeSocialPf()">
+                                <p class="hint">Quantidade de PF que terão nome social (1 até o total de PF). Deixe em branco para geração aleatória.</p>
+                                <p class="field-error" id="erro-nome-social-pf">O valor não pode ser maior que a quantidade de PF.</p>
+                            </div>
+
+                            <hr class="config-divider">
+
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="usar_beneficiario" name="usar_beneficiario" onchange="toggleBeneficiario()">
+                                <label for="usar_beneficiario">Adicionar Beneficiário</label>
+                                <span class="tooltip-wrap">
+                                    <span class="tooltip-icon">i</span>
+                                    <span class="tooltip-box">A participação é distribuída igualmente entre os beneficiários. Ex: 2 → 50% cada; 3 → 33.33%, 33.33%, 33.34%.</span>
+                                </span>
+                            </div>
+                            <div class="sub-field" id="sub-beneficiario">
+                                <input type="number" id="num_beneficiarios_pf" name="num_beneficiarios_pf" min="1" max="5" placeholder="Deixe em branco para aleatório" oninput="validarBeneficiario()">
+                                <p class="hint">Quantidade fixa de beneficiários por PF (1 a 5). Deixe em branco para geração aleatória.</p>
+                                <p class="field-error" id="erro-beneficiario">A quantidade deve ser entre 1 e 5.</p>
+
+                                <hr class="config-divider">
+
+                                <div class="checkbox-group">
+                                    <input type="checkbox" id="usar_nome_social_ben" name="usar_nome_social_ben" onchange="toggleNomeSocialBen()">
+                                    <label for="usar_nome_social_ben">Nome Social</label>
+                                    <span class="tooltip-wrap">
+                                        <span class="tooltip-icon">i</span>
+                                        <span class="tooltip-box">Gera nome social para os beneficiários. Informe quantos por PF terão nome social ou deixe em branco para geração aleatória (50% de chance por beneficiário).</span>
+                                    </span>
+                                </div>
+                                <div class="sub-field" id="sub-nome-social-ben">
+                                    <input type="number" id="num_nome_social_ben" name="num_nome_social_ben" min="1" max="5" placeholder="Deixe em branco para aleatório" oninput="validarNomeSocialBen()">
+                                    <p class="hint">Quantidade de beneficiários por PF que terão nome social (1 a 5). Deixe em branco para geração aleatória.</p>
+                                    <p class="field-error" id="erro-nome-social-ben">A quantidade deve ser entre 1 e 5.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Seção PJ -->
+            <div class="card">
+                <div class="section-header">
+                    <span class="section-badge badge-pj">PJ</span>
+                    <span class="section-header-title">Pessoa Jurídica</span>
+                </div>
+                <div class="section-body">
+                    <div class="form-group">
+                        <label for="num_pj">Quantidade de PJ</label>
+                        <input type="number" id="num_pj" name="num_pj" min="0" max="1000" oninput="atualizarContador()">
+                        <p class="hint">Quantidade de segurados Pessoa Jurídica que serão gerados no lote.</p>
+                    </div>
+
+                    <div class="expandable">
+                        <button type="button" class="expand-toggle" id="expand-btn" onclick="toggleExpandable()">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="#2d7dd2" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg>
+                            Mais configurações
+                        </button>
+                        <div class="expand-content" id="expand-pj">
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="usar_cnpj_alfa" name="usar_cnpj_alfa" onchange="toggleCnpjAlfa()">
+                                <label for="usar_cnpj_alfa">CNPJ Alfanumérico</label>
+                                <span class="tooltip-wrap">
+                                    <span class="tooltip-icon">i</span>
+                                    <span class="tooltip-box">CNPJ no novo formato alfanumérico (ex: AB1C2D3E4F01), conforme padrão SERPRO. Use para testar importações com ambos os tipos de CNPJ.</span>
+                                </span>
+                            </div>
+                            <div class="sub-field" id="sub-cnpj-alfa">
+                                <input type="number" id="num_pj_alfa" name="num_pj_alfa" min="1" placeholder="Deixe em branco para aleatório" oninput="validarCnpjAlfa()">
+                                <p class="hint">Quantidade fixa de PJ com CNPJ alfanumérico (1 até o total de PJ). Deixe em branco para geração aleatória.</p>
+                                <p class="field-error" id="erro-cnpj-alfa">O valor não pode ser maior que a quantidade de PJ.</p>
+                            </div>
+
+                            <hr class="config-divider">
+
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="usar_socio" name="usar_socio" onchange="toggleSocio()">
+                                <label for="usar_socio">Adicionar Sócio</label>
+                                <span class="tooltip-wrap">
+                                    <span class="tooltip-icon">i</span>
+                                    <span class="tooltip-box">A participação é distribuída igualmente entre os sócios. Ex: 3 sócios → 33.33%, 33.33%, 33.34%. Se desmarcado, 1 sócio com 100%.</span>
+                                </span>
+                            </div>
+                            <div class="sub-field" id="sub-socio">
+                                <input type="number" id="num_socios_pj" name="num_socios_pj" min="1" max="15" placeholder="Deixe em branco para aleatório" oninput="validarSocio()">
+                                <p class="hint">Quantidade fixa de sócios por PJ (1 a 15). Deixe em branco para geração aleatória. Se desmarcado, gera 1 sócio por padrão.</p>
+                                <p class="field-error" id="erro-socio">A quantidade deve ser entre 1 e 15.</p>
+
+                                <hr class="config-divider">
+
+                                <div class="checkbox-group">
+                                    <input type="checkbox" id="usar_nome_social_socio" name="usar_nome_social_socio" onchange="toggleNomeSocialSocio()">
+                                    <label for="usar_nome_social_socio">Nome Social</label>
+                                    <span class="tooltip-wrap">
+                                        <span class="tooltip-icon">i</span>
+                                        <span class="tooltip-box">Gera nome social para os sócios. Informe quantos por PJ terão nome social ou deixe em branco para geração aleatória (50% de chance por sócio).</span>
+                                    </span>
+                                </div>
+                                <div class="sub-field" id="sub-nome-social-socio">
+                                    <input type="number" id="num_nome_social_socio" name="num_nome_social_socio" min="1" max="15" placeholder="Deixe em branco para aleatório" oninput="validarNomeSocialSocio()">
+                                    <p class="hint">Quantidade de sócios por PJ que terão nome social (1 a 15). Deixe em branco para geração aleatória.</p>
+                                    <p class="field-error" id="erro-nome-social-socio">A quantidade deve ser entre 1 e 15.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Seção Informações Obrigatórias -->
+            <div class="card">
+                <div class="section-header">
+                    <span class="section-badge" style="background:#f3e8ff;color:#6b21a8;">+</span>
+                    <span class="section-header-title">Informações Obrigatórias</span>
+                </div>
+                <div class="section-body">
+                    <p class="card-label">Capital</p>
+                    <div class="field-row">
+                        <div class="form-group">
+                            <label for="qtd_capital">Quantos campos de capital?</label>
+                            <input type="number" id="qtd_capital" name="qtd_capital" min="1" max="20" placeholder="1 a 20">
+                            <p class="hint">Informe quantos campos CAPITAL_X devem ser preenchidos (1 a 20). Os demais ficam em branco.</p>
+                            <p class="field-error" id="erro-qtd-capital">Informe um valor entre 1 e 20.</p>
+                        </div>
+                        <div class="form-group">
+                            <label for="vl_capital">Valor fixo (opcional)</label>
+                            <input type="number" id="vl_capital" name="vl_capital" min="1" placeholder="Ex: 100000">
+                            <p class="hint">Se preenchido, todos os campos de capital recebem esse valor. Se em branco, cada um recebe um valor aleatório entre 1.000 e 1.000.000.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="submit-area">
+                <!-- Contador em tempo real -->
+                <div class="counter-box" id="counter-box">
+                    Total: <strong id="counter-total">0</strong> registro(s) &nbsp;·&nbsp;
+                    <span id="counter-pf">0</span> PF &nbsp;+&nbsp; <span id="counter-pj">0</span> PJ
+                </div>
+                <!-- Toggle de Layout -->
+                <div class="layout-switch-row">
+                    <span class="layout-opt active" id="opt-flexivel" onclick="setLayout(false)">Layout Flexível</span>
+                    <label class="toggle-sw" for="layout_completo">
+                        <input type="checkbox" name="layout_completo" id="layout_completo" onchange="atualizarLayoutInfo()">
+                        <span class="sw-slider"></span>
+                    </label>
+                    <span class="layout-opt" id="opt-completo" onclick="setLayout(true)">Layout Completo</span>
+                    <span class="tooltip-wrap">
+                        <span class="tooltip-icon">i</span>
+                        <span class="tooltip-box">Flexível: gera apenas as colunas com dados preenchidos, sem colunas vazias. Completo: gera todas as colunas, mesmo as vazias.</span>
+                    </span>
+                </div>
+                <div class="info-box" style="margin-bottom: 12px;">
+                    <span id="info-layout-text">A planilha gerada contém apenas as colunas com dados preenchidos (layout flexível).</span>
+                </div>
+                <div class="btn-row">
+                    <button type="button" class="btn-secondary" onclick="limparFormulario()">Limpar</button>
+                    <button type="submit" id="btn-gerar">Gerar Lote</button>
+                </div>
+                <p class="loading" id="loading-msg"><span class="spinner"></span> Gerando planilha, aguarde...</p>
+                <p class="field-error" id="form-error" style="display:none; text-align:center; margin-top:10px;"></p>
+            </div>
+        </form>
+
+    </div>
+
+    <script>
+        // ── Contador em tempo real ─────────────────────────────────────────
+        function atualizarContador() {
+            var pf = parseInt(document.getElementById('num_pf').value) || 0;
+            var pj = parseInt(document.getElementById('num_pj').value) || 0;
+            var total = pf + pj;
+            var box = document.getElementById('counter-box');
+            if (total === 0) { box.style.display = 'none'; return; }
+            box.style.display = 'block';
+            document.getElementById('counter-total').textContent = total;
+            document.getElementById('counter-pf').textContent = pf;
+            document.getElementById('counter-pj').textContent = pj;
+            box.className = 'counter-box';
+            if (total > 1000) box.classList.add('over-limit');
+            else if (total > 800) box.classList.add('warn');
+        }
+
+        // ── Expandir PF / PJ ──────────────────────────────────────────────
+        function toggleExpandablePf() {
+            document.getElementById('expand-btn-pf').classList.toggle('open');
+            document.getElementById('expand-pf').classList.toggle('open');
+        }
+        function toggleExpandable() {
+            document.getElementById('expand-btn').classList.toggle('open');
+            document.getElementById('expand-pj').classList.toggle('open');
+        }
+
+        // ── Beneficiários ─────────────────────────────────────────────────
+        function toggleBeneficiario() {
+            var checked = document.getElementById('usar_beneficiario').checked;
+            document.getElementById('sub-beneficiario').classList.toggle('visible', checked);
+            if (!checked) {
+                document.getElementById('num_beneficiarios_pf').value = '';
+                document.getElementById('num_beneficiarios_pf').classList.remove('input-error');
+                document.getElementById('erro-beneficiario').style.display = 'none';
+                document.getElementById('usar_nome_social_ben').checked = false;
+                document.getElementById('sub-nome-social-ben').classList.remove('visible');
+                document.getElementById('num_nome_social_ben').value = '';
+                document.getElementById('num_nome_social_ben').classList.remove('input-error');
+                document.getElementById('erro-nome-social-ben').style.display = 'none';
+            }
+        }
+        function validarBeneficiario() {
+            var input = document.getElementById('num_beneficiarios_pf');
+            var erro = document.getElementById('erro-beneficiario');
+            var val = parseInt(input.value);
+            if (!isNaN(val) && (val < 1 || val > 5)) {
+                input.classList.add('input-error');
+                erro.textContent = 'A quantidade deve ser entre 1 e 5.';
+                erro.style.display = 'block';
+            } else {
+                input.classList.remove('input-error');
+                erro.style.display = 'none';
+            }
+        }
+
+        // ── Sócios ────────────────────────────────────────────────────────
+        function toggleSocio() {
+            var checked = document.getElementById('usar_socio').checked;
+            document.getElementById('sub-socio').classList.toggle('visible', checked);
+            if (!checked) {
+                document.getElementById('num_socios_pj').value = '';
+                document.getElementById('num_socios_pj').classList.remove('input-error');
+                document.getElementById('erro-socio').style.display = 'none';
+                document.getElementById('usar_nome_social_socio').checked = false;
+                document.getElementById('sub-nome-social-socio').classList.remove('visible');
+                document.getElementById('num_nome_social_socio').value = '';
+                document.getElementById('num_nome_social_socio').classList.remove('input-error');
+                document.getElementById('erro-nome-social-socio').style.display = 'none';
+            }
+        }
+        function validarSocio() {
+            var input = document.getElementById('num_socios_pj');
+            var erro = document.getElementById('erro-socio');
+            var val = parseInt(input.value);
+            if (!isNaN(val) && (val < 1 || val > 15)) {
+                input.classList.add('input-error');
+                erro.style.display = 'block';
+            } else {
+                input.classList.remove('input-error');
+                erro.style.display = 'none';
+            }
+        }
+
+        // ── CNPJ Alfa ─────────────────────────────────────────────────────
+        function toggleCnpjAlfa() {
+            var checked = document.getElementById('usar_cnpj_alfa').checked;
+            document.getElementById('sub-cnpj-alfa').classList.toggle('visible', checked);
+            if (!checked) {
+                document.getElementById('num_pj_alfa').value = '';
+                document.getElementById('num_pj_alfa').classList.remove('input-error');
+                document.getElementById('erro-cnpj-alfa').style.display = 'none';
+            }
+        }
+        function validarCnpjAlfa() {
+            var numPj = parseInt(document.getElementById('num_pj').value) || 0;
+            var input = document.getElementById('num_pj_alfa');
+            var erro = document.getElementById('erro-cnpj-alfa');
+            var val = parseInt(input.value);
+            if (!isNaN(val) && val > numPj) {
+                input.classList.add('input-error');
+                erro.style.display = 'block';
+            } else {
+                input.classList.remove('input-error');
+                erro.style.display = 'none';
+            }
+        }
+
+        // ── Nome Social ───────────────────────────────────────────────────
+        function toggleNomeSocialPf() {
+            var checked = document.getElementById('usar_nome_social_pf').checked;
+            document.getElementById('sub-nome-social-pf').classList.toggle('visible', checked);
+            if (!checked) {
+                document.getElementById('num_nome_social_pf').value = '';
+                document.getElementById('num_nome_social_pf').classList.remove('input-error');
+                document.getElementById('erro-nome-social-pf').style.display = 'none';
+            }
+        }
+        function validarNomeSocialPf() {
+            var numPf = parseInt(document.getElementById('num_pf').value) || 0;
+            var input = document.getElementById('num_nome_social_pf');
+            var erro = document.getElementById('erro-nome-social-pf');
+            var val = parseInt(input.value);
+            if (!isNaN(val) && val > numPf) {
+                input.classList.add('input-error');
+                erro.style.display = 'block';
+            } else {
+                input.classList.remove('input-error');
+                erro.style.display = 'none';
+            }
+        }
+        function toggleNomeSocialBen() {
+            var checked = document.getElementById('usar_nome_social_ben').checked;
+            document.getElementById('sub-nome-social-ben').classList.toggle('visible', checked);
+            if (!checked) {
+                document.getElementById('num_nome_social_ben').value = '';
+                document.getElementById('num_nome_social_ben').classList.remove('input-error');
+                document.getElementById('erro-nome-social-ben').style.display = 'none';
+            }
+        }
+        function validarNomeSocialBen() {
+            var input = document.getElementById('num_nome_social_ben');
+            var erro = document.getElementById('erro-nome-social-ben');
+            var val = parseInt(input.value);
+            if (!isNaN(val) && (val < 1 || val > 5)) {
+                input.classList.add('input-error');
+                erro.style.display = 'block';
+            } else {
+                input.classList.remove('input-error');
+                erro.style.display = 'none';
+            }
+        }
+        function toggleNomeSocialSocio() {
+            var checked = document.getElementById('usar_nome_social_socio').checked;
+            document.getElementById('sub-nome-social-socio').classList.toggle('visible', checked);
+            if (!checked) {
+                document.getElementById('num_nome_social_socio').value = '';
+                document.getElementById('num_nome_social_socio').classList.remove('input-error');
+                document.getElementById('erro-nome-social-socio').style.display = 'none';
+            }
+        }
+        function validarNomeSocialSocio() {
+            var input = document.getElementById('num_nome_social_socio');
+            var erro = document.getElementById('erro-nome-social-socio');
+            var val = parseInt(input.value);
+            if (!isNaN(val) && (val < 1 || val > 15)) {
+                input.classList.add('input-error');
+                erro.style.display = 'block';
+            } else {
+                input.classList.remove('input-error');
+                erro.style.display = 'none';
+            }
+        }
+
+        // ── Toggle de Layout ───────────────────────────────────────────────
+        function setLayout(completo) {
+            document.getElementById('layout_completo').checked = completo;
+            atualizarLayoutInfo();
+        }
+        function atualizarLayoutInfo() {
+            var checked = document.getElementById('layout_completo').checked;
+            document.getElementById('opt-flexivel').className = 'layout-opt' + (checked ? '' : ' active');
+            document.getElementById('opt-completo').className = 'layout-opt' + (checked ? ' active' : '');
+            document.getElementById('info-layout-text').textContent = checked
+                ? 'A planilha gerada contém todas as colunas, incluindo as vazias (layout completo).'
+                : 'A planilha gerada contém apenas as colunas com dados preenchidos (layout flexível).';
+        }
+        // ── Limpar formulário ─────────────────────────────────────────────
+        // ── Capital ─────────────────────────────────────────────────
+        function toggleCapital() {
+            var checked = document.getElementById('usar_capital').checked;
+            document.getElementById('sub-capital').classList.toggle('visible', checked);
+            if (!checked) {
+                document.getElementById('qtd_capital').value = '';
+                document.getElementById('qtd_capital').classList.remove('input-error');
+                document.getElementById('erro-qtd-capital').style.display = 'none';
+                document.getElementById('vl_capital').value = '';
+            }
+        }
+
+        function validarQtdCapital() {
+            var input = document.getElementById('qtd_capital');
+            var erro = document.getElementById('erro-qtd-capital');
+            var val = parseInt(input.value);
+            if (!isNaN(val) && (val < 1 || val > 20)) {
+                input.classList.add('input-error');
+                erro.style.display = 'block';
+            } else {
+                input.classList.remove('input-error');
+                erro.style.display = 'none';
+            }
+        }
+
+        function limparFormulario() {
+            ['num_pf', 'num_pj', 'num_beneficiarios_pf', 'num_pj_alfa', 'num_socios_pj', 'qtd_capital', 'vl_capital', 'num_nome_social_pf', 'num_nome_social_ben', 'num_nome_social_socio'].forEach(function(id) {
+                document.getElementById(id).value = '';
+                document.getElementById(id).classList.remove('input-error');
+            });
+            document.getElementById('prefixo_arquivo').value = '';
+            ['usar_beneficiario', 'usar_cnpj_alfa', 'usar_socio', 'usar_nome_social_pf', 'usar_nome_social_ben', 'usar_nome_social_socio'].forEach(function(id) {
+                document.getElementById(id).checked = false;
+            });
+            ['sub-beneficiario', 'sub-cnpj-alfa', 'sub-socio', 'sub-nome-social-pf', 'sub-nome-social-ben', 'sub-nome-social-socio'].forEach(function(id) {
+                document.getElementById(id).classList.remove('visible');
+            });
+            ['expand-btn-pf', 'expand-btn'].forEach(function(id) {
+                document.getElementById(id).classList.remove('open');
+            });
+            ['expand-pf', 'expand-pj'].forEach(function(id) {
+                document.getElementById(id).classList.remove('open');
+            });
+            ['erro-beneficiario', 'erro-cnpj-alfa', 'erro-socio', 'erro-qtd-capital', 'erro-nome-social-pf', 'erro-nome-social-ben', 'erro-nome-social-socio', 'form-error'].forEach(function(id) {
+                document.getElementById(id).style.display = 'none';
+            });
+            atualizarContador();
+            document.getElementById('layout_completo').checked = false;
+            atualizarLayoutInfo();
+            document.getElementById('js-alert').style.display = 'none';
+        }
+
+        // ── Feedback JS ───────────────────────────────────────────────────
+        function mostrarAlerta(msg, tipo) {
+            var el = document.getElementById('js-alert');
+            el.className = 'alert alert-' + tipo;
+            if (tipo === 'success') {
+                el.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="#2e7d32" style="flex-shrink:0"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> ' + msg;
+                el.style.display = 'flex';
+            } else {
+                el.textContent = msg;
+                el.style.display = 'block';
+            }
+            el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // ── Submit via Fetch ───────────────────────────────────────────────
+        document.getElementById('gerador-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            document.getElementById('js-alert').style.display = 'none';
+            var formError = document.getElementById('form-error');
+            formError.style.display = 'none';
+
+            var numPf = parseInt(document.getElementById('num_pf').value) || 0;
+            var numPj = parseInt(document.getElementById('num_pj').value) || 0;
+
+            if (numPf === 0 && numPj === 0) {
+                formError.textContent = 'Informe ao menos 1 registro de PF ou PJ.';
+                formError.style.display = 'block';
+                return;
+            }
+            if (numPf + numPj > 1000) {
+                formError.textContent = 'Limite máximo de 1000 registros por geração.';
+                formError.style.display = 'block';
+                return;
+            }
+
+            var benChecked = document.getElementById('usar_beneficiario').checked;
+            if (benChecked) {
+                var benInput = document.getElementById('num_beneficiarios_pf');
+                var benVal = parseInt(benInput.value);
+                if (benInput.value !== '' && (isNaN(benVal) || benVal < 1 || benVal > 5)) {
+                    benInput.classList.add('input-error');
+                    document.getElementById('erro-beneficiario').textContent = 'A quantidade deve ser entre 1 e 5.';
+                    document.getElementById('erro-beneficiario').style.display = 'block';
+                    return;
+                }
+            }
+            var socioChecked = document.getElementById('usar_socio').checked;
+            if (socioChecked) {
+                var socioInput = document.getElementById('num_socios_pj');
+                var socioVal = parseInt(socioInput.value);
+                if (socioInput.value !== '' && (isNaN(socioVal) || socioVal < 1 || socioVal > 15)) {
+                    socioInput.classList.add('input-error');
+                    document.getElementById('erro-socio').style.display = 'block';
+                    return;
+                }
+            }
+            var alfaChecked = document.getElementById('usar_cnpj_alfa').checked;
+            var alfaInput = document.getElementById('num_pj_alfa');
+            if (alfaChecked && alfaInput.value !== '') {
+                var alfaVal = parseInt(alfaInput.value);
+                if (!isNaN(alfaVal) && alfaVal > numPj) {
+                    alfaInput.classList.add('input-error');
+                    document.getElementById('erro-cnpj-alfa').style.display = 'block';
+                    return;
+                }
+            }
+
+            var nsPfChecked = document.getElementById('usar_nome_social_pf').checked;
+            var nsPfInput = document.getElementById('num_nome_social_pf');
+            if (nsPfChecked && nsPfInput.value !== '') {
+                var nsPfVal = parseInt(nsPfInput.value);
+                if (!isNaN(nsPfVal) && nsPfVal > numPf) {
+                    nsPfInput.classList.add('input-error');
+                    document.getElementById('erro-nome-social-pf').style.display = 'block';
+                    return;
+                }
+            }
+
+            var qtdInput = document.getElementById('qtd_capital');
+            var qtdVal = parseInt(qtdInput.value);
+            if (qtdInput.value === '' || isNaN(qtdVal) || qtdVal < 1 || qtdVal > 20) {
+                qtdInput.classList.add('input-error');
+                document.getElementById('erro-qtd-capital').style.display = 'block';
+                return;
+            }
+
+            document.getElementById('prefixo_hidden').value = document.getElementById('prefixo_arquivo').value.trim();
+
+            var btn = document.getElementById('btn-gerar');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span> Gerando...';
+            document.getElementById('loading-msg').style.display = 'block';
+
+            try {
+                var resp = await fetch('/gerador', {
+                    method: 'POST',
+                    headers: { 'X-Fetch': '1' },
+                    body: new FormData(this)
+                });
+                var ct = resp.headers.get('Content-Type') || '';
+                if (ct.includes('spreadsheetml') || ct.includes('octet-stream')) {
+                    var blob = await resp.blob();
+                    var cd = resp.headers.get('Content-Disposition') || '';
+                    var fname = 'lote_importacao.xlsx';
+                    var m = cd.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+                    if (m) fname = m[1].replace(/['"]/g, '');
+                    var url = URL.createObjectURL(blob);
+                    var a = document.createElement('a');
+                    a.href = url; a.download = fname;
+                    document.body.appendChild(a); a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    mostrarAlerta('Planilha gerada com sucesso! O download foi iniciado.', 'success');
+                } else {
+                    var data = await resp.json();
+                    mostrarAlerta(data.error || 'Erro ao gerar planilha.', 'error');
+                }
+            } catch (err) {
+                mostrarAlerta('Erro de conexão. Tente novamente.', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = 'Gerar Lote';
+                document.getElementById('loading-msg').style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
