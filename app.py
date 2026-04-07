@@ -29,7 +29,7 @@ def _erro(msg, is_fetch):
 
 @app.route('/')
 def home():
-    return render_template('home.html')
+    return render_template('facilitadoresPMT.html')
 
 
 @app.route('/gerador', methods=['GET', 'POST'])
@@ -244,7 +244,7 @@ def index():
             mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
 
-    return render_template('index.html')
+    return render_template('geradorLoteColetivoPFPJ.html')
 
 
 if __name__ == '__main__':
