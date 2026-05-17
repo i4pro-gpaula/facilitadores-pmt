@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prompt Code Review SQL</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: Arial, sans-serif; background: #f0f2f5; padding: 40px 20px; }
+        .container { max-width: 720px; margin: 0 auto; }
+
+        /* Cabeçalho */
+        .page-header { margin-bottom: 22px; }
+        .back-link {
+            display: inline-flex; align-items: center; gap: 5px;
+            font-size: 0.8rem; font-weight: 600; color: #2d7dd2;
+            text-decoration: none; margin-bottom: 16px;
+            padding: 5px 12px 5px 8px;
+            border: 1.5px solid #c5daf7; border-radius: 20px;
+            background: #f0f7ff;
+            transition: background 0.15s, border-color 0.15s, color 0.15s;
+        }
+        .back-link:hover { background: #2d7dd2; color: #fff; border-color: #2d7dd2; }
+        .back-link:hover svg { fill: #fff; }
+        h1 { font-size: 1.35rem; color: #1a1a2e; margin-bottom: 3px; }
+        .subtitle { font-size: 0.84rem; color: #888; }
+
+        /* Card genérico */
+        .card { background: #fff; border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 14px; border: 1px solid #eaecf0; }
+        .card-body { padding: 18px 22px; }
+        .card-label {
+            font-size: 0.7rem; font-weight: bold; color: #1a5fa8;
+            text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 12px;
+        }
+
+        /* Pré-requisitos */
+        .checklist { list-style: none; display: flex; flex-direction: column; gap: 7px; }
+        .checklist li {
+            font-size: 0.88rem; color: #333;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .check-icon { color: #2e7d32; font-size: 1rem; flex-shrink: 0; }
+
+        /* Passos */
+        .step-list { display: flex; flex-direction: column; gap: 10px; }
+        .step {
+            background: #f7f9fc;
+            border-left: 4px solid #1a5fa8;
+            border-radius: 0 7px 7px 0;
+            padding: 11px 14px;
+            font-size: 0.87rem; color: #333; line-height: 1.6;
+        }
+        .step strong { color: #1a1a2e; }
+        .step.warning {
+            background: #fff8f0;
+            border-left-color: #e67e22;
+        }
+        .step.warning strong { color: #b85c00; }
+        .step pre {
+            background: #eef2f7; border-radius: 5px;
+            padding: 8px 10px; margin-top: 8px;
+            font-size: 0.82rem; overflow-x: auto;
+            color: #1a1a2e;
+        }
+        .inline-code {
+            background: #eef2f7; border-radius: 3px;
+            padding: 1px 5px; font-size: 0.82rem;
+            font-family: 'Courier New', monospace; color: #1a1a2e;
+        }
+        .mini-note {
+            margin-top: 8px; font-size: 0.81rem; color: #666; line-height: 1.5;
+        }
+
+        /* Prompt box */
+        .prompt-box {
+            background: #1e1e1e; color: #dcdcdc;
+            border-radius: 8px; overflow-x: auto;
+            padding: 20px; position: relative;
+            font-size: 0.85rem; line-height: 1.65;
+        }
+        .prompt-box pre { white-space: pre-wrap; word-break: break-word; font-family: 'Courier New', monospace; }
+        .btn-copy {
+            position: absolute; top: 12px; right: 12px;
+            background: #2d7dd2; color: #fff;
+            border: none; padding: 7px 14px;
+            border-radius: 5px; font-size: 0.8rem; font-weight: bold;
+            cursor: pointer; transition: background 0.15s;
+        }
+        .btn-copy:hover { background: #1a5fa8; }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <div class="page-header">
+            <a href="/" class="back-link">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="#2d7dd2"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+                Voltar
+            </a>
+            <h1>Prompt Code Review — Copilot</h1>
+            <p class="subtitle">Prompt padronizado para revisão de procedures SQL antes de abrir ou comentar um PR</p>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <div class="card-label">Pré-requisitos</div>
+                <ul class="checklist">
+                    <li><span class="check-icon">✅</span> Estar na branch que será analisada</li>
+                    <li><span class="check-icon">✅</span> Ter o projeto aberto no VS Code (workspace completa)</li>
+                    <li><span class="check-icon">✅</span> Ter o Copilot habilitado</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <div class="card-label">Passo a passo</div>
+                <div class="step-list">
+
+                    <div class="step">
+                        <strong>1. Posicione-se na branch</strong><br>
+                        Garanta que você está na branch correta que deseja analisar.
+                    </div>
+
+                    <div class="step">
+                        <strong>2. Gere o diff com a master (atualizado)</strong><br>
+                        Execute os comandos:
+                        <pre>git fetch origin
+git diff origin/master | clip</pre>
+                        <div class="mini-note">
+                            O <span class="inline-code">git fetch</span> atualiza o <span class="inline-code">origin/master</span> com o remoto.<br>
+                            O <span class="inline-code">| clip</span> copia automaticamente o resultado para a área de transferência.
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <strong>3. Cole o diff no VS Code</strong><br>
+                        Crie um arquivo temporário (ex: <span class="inline-code">review_diff.txt</span>) e cole o conteúdo.
+                    </div>
+
+                    <div class="step warning">
+                        <strong>4. Atenção — Papel do desenvolvedor</strong><br>
+                        O prompt deve ser utilizado como <strong>base de apoio</strong> para análise.<br><br>
+                        A revisão final é responsabilidade de quem está analisando o código. Avalie criticamente cada ponto
+                        retornado pelo Copilot e valide:<br>
+                        • Se o problema realmente se aplica ao contexto<br>
+                        • Se a sugestão faz sentido para o negócio e padrão do projeto<br>
+                        • Se existe impacto colateral não identificado<br><br>
+                        <strong>Não utilize o resultado de forma automática.</strong>
+                    </div>
+
+                    <div class="step">
+                        <strong>5. Use o Copilot</strong><br>
+                        Cole o prompt abaixo no Copilot Chat e em seguida o diff.
+                    </div>
+
+                    <div class="step">
+                        <strong>6. Analise o retorno</strong><br>
+                        O resultado virá em Markdown, pronto para comentário no PR.
+                    </div>
+
+                    <div class="step">
+                        <strong>7. Importante</strong><br>
+                        A análise é mais eficaz com o projeto aberto no VS Code (contexto do workspace).
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <div class="card-label">Prompt para uso</div>
+                <div class="prompt-box">
+                    <button class="btn-copy" onclick="copyPrompt()">Copiar</button>
+                    <pre id="promptText">Revise o diff abaixo considerando somente arquivos de procedures SQL (.sql).
+Faça a revisão sob os seguintes critérios, em ordem de prioridade:
+
+🔴 Erros claros e óbvios de SQL
+• Uso incorreto de funções (ISNULL(x, x), NOT EXISTS com lógica invertida, etc.)
+• Referências a tabelas temporárias inexistentes na procedure atual
+• Variáveis usadas antes de serem populadas
+• Inconsistência entre ##temp e #temp
+• Ausência de SET XACT_ABORT ON
+• Inconsistência de schema em funções
+
+🟠 Coerência e erros de lógica de negócio
+• Validações incompletas
+• Atualizações em tabelas globais indevidas
+• Exclusões sem filtro adequado
+• Ausência de guarda @cd_retorno
+• Falhas silenciosas sem erro
+
+🟡 Validações faltantes em APIs
+• Falta de validação de pertencimento entre parâmetros
+• Combinações inválidas aceitas
+• Mensagens inconsistentes
+
+🔵 Padronização
+• Nome incorreto em @nm_proc
+• Padrão de guarda inconsistente
+• Ausência de SETs padrão
+• Inconsistência de nomenclatura
+
+Para cada observação, indique:
+- Arquivo / procedure
+- Trecho do código
+- Sugestão objetiva de correção
+
+Retorne o resultado em formato Markdown, separando claramente cada tópico (🔴 🟠 🟡 🔵) em seções distintas.</pre>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function copyPrompt() {
+            const text = document.getElementById("promptText").innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = document.querySelector('.btn-copy');
+                btn.textContent = 'Copiado!';
+                setTimeout(() => btn.textContent = 'Copiar', 2000);
+            });
+        }
+    </script>
+
+</body>
+</html>

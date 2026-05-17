@@ -283,5 +283,14 @@ def gerador_ppt_gerar():
         return jsonify({'erro': f'Erro ao gerar apresentação: {str(e)}'}), 500
 
 
+# ---------------------------------------------------------------------------
+# Prompts
+# ---------------------------------------------------------------------------
+
+@app.route('/prompt-code-review')
+def prompt_code_review():
+    return render_template('promptCodeReview.html')
+
+
 if __name__ == '__main__':
     app.run(debug=True)

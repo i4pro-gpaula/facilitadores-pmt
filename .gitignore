@@ -27,3 +27,6 @@ __pycache__/
 # Sistema operacional
 .DS_Store
 Thumbs.db
+
+# Script de execução local (opcional manter, mas não é necessário no repo)
+run.ps1
