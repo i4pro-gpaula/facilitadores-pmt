@@ -1,22 +1,23 @@
 """
-Aplicação Web - Gerador de Lote de Importação
-Flask app para PythonAnywhere
+Facilitadores PMT - Aplicação Web Unificada
+Flask app para Render / PythonAnywhere
 """
 
 import io
 import os
-import sys
+import tempfile
 from datetime import datetime
 
 import pandas as pd
 from flask import Flask, flash, jsonify, redirect, render_template, request, send_file, url_for
 
-# Garante que o módulo gerador seja encontrado na mesma pasta
-sys.path.insert(0, os.path.dirname(__file__))
-from gerador_planilha_completa import GeradorPlanilhaCompleta
+from modules.gerador_massa_pmt_pf_pj import GeradorPlanilhaCompleta
+from modules.gerador_ppt import processar_texto, gerar_apresentacao_pptx, gerar_nome_arquivo
 
 app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY', 'gerador_lote_importacao_2026')
+app.secret_key = os.environ.get('SECRET_KEY', 'facilitadores_pmt_2026')
+
+MODELO_PPTX = os.path.join(os.path.dirname(__file__), 'assets', 'modelo.pptx')
 
 
 def _erro(msg, is_fetch):
@@ -24,16 +25,16 @@ def _erro(msg, is_fetch):
     if is_fetch:
         return jsonify({'error': msg}), 400
     flash(msg, 'error')
-    return redirect(url_for('index'))
+    return redirect(url_for('gerador_massa_pmt_pf_pj'))
 
 
 @app.route('/')
 def home():
-    return render_template('facilitadoresPMT.html')
+    return render_template('index.html')
 
 
-@app.route('/gerador', methods=['GET', 'POST'])
-def index():
+@app.route('/gerador-massa-pmt-pf-pj', methods=['GET', 'POST'])
+def gerador_massa_pmt_pf_pj():
     if request.method == 'POST':
         is_fetch = request.headers.get('X-Fetch') == '1'
         # Validar e capturar entradas
@@ -192,8 +193,8 @@ def index():
             return _erro('Valores inválidos. Use apenas números inteiros.', is_fetch)
 
         # Gerar planilha em memória
-        gerador = GeradorPlanilhaCompleta()
-        df = gerador.gerar_planilha(num_pf, num_pj, num_pj_alfa, num_beneficiarios_pf=num_beneficiarios_pf, num_socios_pj=num_socios_pj, qtd_capital=qtd_capital, vl_capital=vl_capital, num_pf_nome_social=num_pf_nome_social, num_ben_nome_social=num_ben_nome_social, num_socio_nome_social=num_socio_nome_social, cd_produto=cd_produto, dt_adesao=dt_adesao, dt_cancelamento=dt_cancelamento, dt_proposta_val=dt_proposta_val, inicio_vig=inicio_vig, fim_vig=fim_vig, inicio_vig_endosso=inicio_vig_endosso, fim_vig_endosso=fim_vig_endosso, forma_pagamento=forma_pagamento, nro_apolice=nro_apolice, nro_sub=nro_sub, tpmovto=tpmovto, vencimento_str=vencimento_str, nr_grupo=nr_grupo, nr_cota=nr_cota, nm_bem=nm_bem, dt_inicio_consorcio=dt_inicio_consorcio, nr_meses_financiamento=nr_meses_financiamento, vl_saldo_devedor=vl_saldo_devedor, layout=layout_tipo)
+        gerador_obj = GeradorPlanilhaCompleta()
+        df = gerador_obj.gerar_planilha(num_pf, num_pj, num_pj_alfa, num_beneficiarios_pf=num_beneficiarios_pf, num_socios_pj=num_socios_pj, qtd_capital=qtd_capital, vl_capital=vl_capital, num_pf_nome_social=num_pf_nome_social, num_ben_nome_social=num_ben_nome_social, num_socio_nome_social=num_socio_nome_social, cd_produto=cd_produto, dt_adesao=dt_adesao, dt_cancelamento=dt_cancelamento, dt_proposta_val=dt_proposta_val, inicio_vig=inicio_vig, fim_vig=fim_vig, inicio_vig_endosso=inicio_vig_endosso, fim_vig_endosso=fim_vig_endosso, forma_pagamento=forma_pagamento, nro_apolice=nro_apolice, nro_sub=nro_sub, tpmovto=tpmovto, vencimento_str=vencimento_str, nr_grupo=nr_grupo, nr_cota=nr_cota, nm_bem=nm_bem, dt_inicio_consorcio=dt_inicio_consorcio, nr_meses_financiamento=nr_meses_financiamento, vl_saldo_devedor=vl_saldo_devedor, layout=layout_tipo)
 
         # Colunas que devem ser gravadas como texto explícito no xlsx.
         # Inclui datas (DD/MM/YYYY como string) e identificadores com zeros à esquerda.
@@ -245,6 +246,41 @@ def index():
         )
 
     return render_template('geradorLoteColetivoPFPJ.html')
+
+
+# ---------------------------------------------------------------------------
+# Gerador de Apresentação PPT
+# ---------------------------------------------------------------------------
+
+@app.route('/gerador-ppt')
+def gerador_ppt():
+    return render_template('geradorPPT.html')
+
+
+@app.route('/gerador-ppt/gerar', methods=['POST'])
+def gerador_ppt_gerar():
+    texto = request.form.get('conteudo', '').strip()
+    if not texto:
+        return jsonify({'erro': 'Conteúdo não pode estar vazio'}), 400
+
+    try:
+        dados = processar_texto(texto)
+        nome_arquivo = gerar_nome_arquivo(dados['TITULO_APRESENTACAO'])
+
+        fd, tmp_path = tempfile.mkstemp(suffix='.pptx')
+        os.close(fd)
+        gerar_apresentacao_pptx(dados, MODELO_PPTX, tmp_path)
+
+        return send_file(
+            tmp_path,
+            as_attachment=True,
+            download_name=nome_arquivo,
+            mimetype='application/vnd.openxmlformats-officedocument.presentationml.presentation'
+        )
+    except ValueError as e:
+        return jsonify({'erro': str(e)}), 400
+    except Exception as e:
+        return jsonify({'erro': f'Erro ao gerar apresentação: {str(e)}'}), 500
 
 
 if __name__ == '__main__':

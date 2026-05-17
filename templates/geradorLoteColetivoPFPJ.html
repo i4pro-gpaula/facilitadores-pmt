@@ -761,7 +761,7 @@
             document.getElementById('loading-msg').style.display = 'block';
 
             try {
-                var resp = await fetch('/gerador', {
+                var resp = await fetch('/gerador-massa-pmt-pf-pj', {
                     method: 'POST',
                     headers: { 'X-Fetch': '1' },
                     body: new FormData(this)

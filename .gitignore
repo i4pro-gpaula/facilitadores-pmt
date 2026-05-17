@@ -1,0 +1,29 @@
+# Ambiente virtual
+.venv/
+venv/
+env/
+
+# Cache Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Arquivos gerados / temporários
+*.xlsx
+*.pptx
+*.tmp
+*.log
+
+# Variáveis de ambiente
+.env
+.env.*
+
+# Configurações de editores
+.vscode/
+.idea/
+*.suo
+*.user
+
+# Sistema operacional
+.DS_Store
+Thumbs.db

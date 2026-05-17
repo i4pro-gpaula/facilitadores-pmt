@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Apresentação PPT</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: Arial, sans-serif; background: #f0f2f5; padding: 40px 20px; }
+        .container { max-width: 620px; margin: 0 auto; }
+
+        /* Cabeçalho */
+        .page-header { margin-bottom: 22px; }
+        .back-link {
+            display: inline-flex; align-items: center; gap: 5px;
+            font-size: 0.8rem; font-weight: 600; color: #2d7dd2;
+            text-decoration: none; margin-bottom: 16px;
+            padding: 5px 12px 5px 8px;
+            border: 1.5px solid #c5daf7; border-radius: 20px;
+            background: #f0f7ff;
+            transition: background 0.15s, border-color 0.15s, color 0.15s;
+        }
+        .back-link:hover { background: #2d7dd2; color: #fff; border-color: #2d7dd2; }
+        .back-link:hover svg { fill: #fff; }
+        h1 { font-size: 1.35rem; color: #1a1a2e; margin-bottom: 3px; }
+        .subtitle { font-size: 0.84rem; color: #888; }
+
+        /* Alertas */
+        .alert { padding: 11px 15px; border-radius: 7px; margin-bottom: 16px; font-size: 0.87rem; display: none; }
+        .alert-error { background: #fdecea; color: #c0392b; border: 1px solid #f5c6cb; }
+        .alert-success { background: #e6f4ea; color: #2e7d32; border: 1px solid #a5d6a7; }
+
+        /* Cards */
+        .card { background: #fff; border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 14px; border: 1px solid #eaecf0; }
+        .card-body { padding: 18px 22px; }
+        .card-label { font-size: 0.7rem; font-weight: bold; color: #c0441e; text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 12px; }
+
+        /* Textarea */
+        .form-group { margin-bottom: 14px; }
+        .form-group:last-child { margin-bottom: 0; }
+        label { display: block; font-size: 0.85rem; font-weight: bold; color: #333; margin-bottom: 6px; }
+        textarea {
+            width: 100%; padding: 10px 12px;
+            border: 1px solid #dde1e7; border-radius: 6px;
+            font-size: 0.88rem; color: #222; background: #fafbfc;
+            font-family: 'Courier New', monospace; line-height: 1.55;
+            resize: vertical; min-height: 260px;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        textarea:focus {
+            outline: none; border-color: #4a90d9; background: #fff;
+            box-shadow: 0 0 0 3px rgba(74,144,217,0.12);
+        }
+
+        /* Info box */
+        .info-box {
+            background: #fff8f5; border-left: 3px solid #c0441e;
+            border-radius: 0 7px 7px 0; padding: 12px 14px;
+            font-size: 0.81rem; color: #7a3010; margin-bottom: 14px;
+            line-height: 1.6;
+        }
+        .info-box strong { display: block; margin-bottom: 4px; color: #c0441e; }
+        .info-box code {
+            background: #fde8d8; border-radius: 3px;
+            padding: 1px 5px; font-size: 0.8rem;
+        }
+
+        /* Botão */
+        .btn-gerar {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: #c0441e; color: #fff; border: none;
+            padding: 11px 28px; border-radius: 7px;
+            font-size: 0.92rem; font-weight: bold; cursor: pointer;
+            transition: background 0.15s, transform 0.1s;
+        }
+        .btn-gerar:hover { background: #a33518; }
+        .btn-gerar:active { transform: scale(0.98); }
+        .btn-gerar:disabled { background: #ccc; cursor: not-allowed; }
+        .btn-gerar svg { fill: #fff; }
+
+        .spinner { display: none; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <div class="page-header">
+        <a href="/" class="back-link">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="#2d7dd2"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+            Voltar
+        </a>
+        <h1>Gerador de Apresentação PPT</h1>
+        <p class="subtitle">Cole o conteúdo em texto e baixe o arquivo PowerPoint</p>
+    </div>
+
+    <div id="alert-error" class="alert alert-error"></div>
+
+    <div class="info-box">
+        <strong>Formato do conteúdo</strong>
+        <strong>Linha 1:</strong> Título da apresentação<br>
+        <strong>Linha 2:</strong> Subtítulo<br>
+        <strong>Parágrafos seguintes</strong> (separados por linha em branco) = um slide cada:<br>
+        &nbsp;&nbsp;• Primeira linha do parágrafo → título do slide<br>
+        &nbsp;&nbsp;• Demais linhas → conteúdo do slide
+    </div>
+
+    <form id="form-ppt">
+        <div class="card">
+            <div class="card-body">
+                <div class="card-label">Conteúdo</div>
+                <div class="form-group">
+                    <textarea name="conteudo" id="conteudo" placeholder="Título da Apresentação
+Subtítulo
+
+Primeiro Slide
+Conteúdo do primeiro slide.
+Mais informações aqui.
+
+Segundo Slide
+Conteúdo do segundo slide."></textarea>
+                </div>
+            </div>
+        </div>
+
+        <button type="submit" class="btn-gerar" id="btn-gerar">
+            <svg width="16" height="16" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zm-14 9v2h14v-2H5z"/></svg>
+            <span id="btn-label">Gerar Apresentação</span>
+            <div class="spinner" id="spinner"></div>
+        </button>
+    </form>
+
+</div>
+
+<script>
+    const form = document.getElementById('form-ppt');
+    const btn = document.getElementById('btn-gerar');
+    const btnLabel = document.getElementById('btn-label');
+    const spinner = document.getElementById('spinner');
+    const alertError = document.getElementById('alert-error');
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        alertError.style.display = 'none';
+
+        const conteudo = document.getElementById('conteudo').value.trim();
+        if (!conteudo) {
+            alertError.textContent = 'Informe o conteúdo da apresentação.';
+            alertError.style.display = 'block';
+            return;
+        }
+
+        btn.disabled = true;
+        btnLabel.textContent = 'Gerando...';
+        spinner.style.display = 'block';
+
+        try {
+            const resp = await fetch('/gerador-ppt/gerar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({ conteudo })
+            });
+
+            if (resp.ok) {
+                const blob = await resp.blob();
+                const contentDisposition = resp.headers.get('Content-Disposition') || '';
+                const match = contentDisposition.match(/filename[^;=\n]*=([^;\n]*)/);
+                const filename = match ? match[1].replace(/['"]/g, '').trim() : 'apresentacao.pptx';
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                a.click();
+                URL.revokeObjectURL(url);
+            } else {
+                const data = await resp.json();
+                alertError.textContent = data.erro || 'Erro ao gerar apresentação.';
+                alertError.style.display = 'block';
+            }
+        } catch (err) {
+            alertError.textContent = 'Erro de conexão. Tente novamente.';
+            alertError.style.display = 'block';
+        } finally {
+            btn.disabled = false;
+            btnLabel.textContent = 'Gerar Apresentação';
+            spinner.style.display = 'none';
+        }
+    });
+</script>
+</body>
+</html>
